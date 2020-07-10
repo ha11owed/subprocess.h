@@ -357,6 +357,21 @@ UTEST(create, subprocess_not_inherit_all_environment) {
   ASSERT_EQ(0, subprocess_destroy(&process));
 }
 
+UTEST(create, subprocess_pass_environment) {
+  const char *const commandLine[] = {"./process_inherit_environment", 0};
+  const char *const environment[] = {"PROCESS_ENV_TEST=42", 0};
+  struct subprocess_s process;
+  int ret = -1;
+
+  ASSERT_EQ(0, subprocess_create_ex(commandLine, environment, 0, &process));
+
+  ASSERT_EQ(0, subprocess_join(&process, &ret));
+
+  ASSERT_EQ(42, ret);
+
+  ASSERT_EQ(0, subprocess_destroy(&process));
+}
+
 UTEST(create, subprocess_inherit_all_environment) {
   const char *const commandLine[] = {"./process_inherit_environment", "all", 0};
   struct subprocess_s process;

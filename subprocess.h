@@ -80,6 +80,21 @@ subprocess_weak int subprocess_create(const char *const command_line[],
                                       int options,
                                       struct subprocess_s *const out_process);
 
+/// @brief Create a process.
+/// @param command_line An array of strings for the command line to execute for
+/// this process. The last element must be NULL to signify the end of the array.
+/// @param environment_variables An array of strings containing the environment
+/// variables to be passed to the created process. The last element must be NULL
+/// to signify the end of the array. The parameter will be ignored when
+/// subprocess_option_inherit_environment is contained in the options.
+/// @param options A bit field of subprocess_option_e's to pass.
+/// @param out_process The newly created process.
+/// @return On success 0 is returned.
+subprocess_weak int subprocess_create_ex(const char *const command_line[],
+                                         const char *const environment_variables[],
+                                         int options,
+                                         struct subprocess_s *const out_process);
+
 /// @brief Get the standard input file for a process.
 /// @param process The process to query.
 /// @return The file for standard input of the process.
@@ -369,6 +384,13 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
 
 int subprocess_create(const char *const commandLine[], int options,
                       struct subprocess_s *const out_process) {
+    return subprocess_create_ex(commandLine, 0, options, out_process);
+}
+
+int subprocess_create_ex(const char *const commandLine[],
+                         const char *const environmentVariables[],
+                         int options,
+                         struct subprocess_s *const out_process) {
 #if defined(_MSC_VER)
   int fd;
   void *rd, *wr;
@@ -596,7 +618,11 @@ int subprocess_create(const char *const commandLine[], int options,
     if (subprocess_option_inherit_environment !=
         (options & subprocess_option_inherit_environment)) {
       char *const environment[1] = {0};
-      exit(execve(commandLine[0], (char *const *)commandLine, environment));
+      if (environmentVariables) {
+        exit(execve(commandLine[0], (char *const *)commandLine, (char *const *)environmentVariables));
+      } else {
+        exit(execve(commandLine[0], (char *const *)commandLine, environment));
+      }
     } else {
       exit(execvp(commandLine[0], (char *const *)commandLine));
     }
